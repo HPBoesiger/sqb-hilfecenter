@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SQB Hilfecenter</title>
+  <title>MS-Anwendungen Hilfecenter</title>
   
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -500,6 +500,29 @@
       border-bottom-left-radius: 4px;
     }
 
+    .chat-message.assistant a {
+      color: var(--sqb-primary);
+      text-decoration: underline;
+      word-break: break-word;
+    }
+
+    .chat-message.assistant a:hover {
+      color: var(--sqb-accent);
+    }
+
+    .chat-message.assistant strong {
+      font-weight: 600;
+      color: var(--sqb-text);
+    }
+
+    .chat-message.assistant code {
+      background: rgba(0,0,0,0.05);
+      padding: 0.1rem 0.3rem;
+      border-radius: 3px;
+      font-family: monospace;
+      font-size: 0.85em;
+    }
+
     .chat-message.typing {
       display: flex;
       gap: 4px;
@@ -786,8 +809,8 @@
     <!-- Header -->
     <header class="header">
       <div class="header-content">
-        <h1 class="header-title">SQB Hilfecenter</h1>
-        <p class="header-subtitle">Anleitungen, Tipps und Unterstützung für alle SQB-Produkte</p>
+        <h1 class="header-title">MS-Anwendungen Hilfecenter</h1>
+        <p class="header-subtitle">Anleitungen, Tipps und Unterstützung für alle MS-Anwendungen</p>
       </div>
     </header>
 
@@ -868,7 +891,7 @@
     <!-- Chat Panel -->
     <div class="chat-panel" id="chat-panel">
       <div class="chat-header">
-        <span class="chat-header-title">💬 SQB Assistent</span>
+        <span class="chat-header-title">💬 MS-Anwendungen Assistent</span>
         <div style="display: flex; gap: 0.5rem;">
           <button class="chat-close" id="chat-settings" title="Einstellungen">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -884,7 +907,7 @@
       </div>
       <div class="chat-messages" id="chat-messages">
         <div class="chat-message assistant">
-          Willkommen im SQB Hilfecenter! Wie kann ich Ihnen helfen?
+          Willkommen im MS-Anwendungen Hilfecenter! Wie kann ich Ihnen helfen?
         </div>
       </div>
       <div class="chat-input-container">
@@ -988,9 +1011,11 @@
         return 'Bitte zuerst den OpenAI API-Key in den Einstellungen hinterlegen. Klicken Sie auf das Zahnrad-Symbol oben rechts im Chat.';
       }
       
-      // Detaillierte Artikel-Infos inkl. Schritte erstellen
+      // Detaillierte Artikel-Infos inkl. Schritte und Asset-Links erstellen
+      const baseUrl = 'https://hpboesiger.github.io/sqb-hilfecenter/';
       const artikelDetails = articles.map(a => {
         let info = `## ${a.titel}\n`;
+        info += `Artikel-ID: ${a.id}\n`;
         info += `Produkte: ${a.produkte.join(', ')}\n`;
         info += `Beschreibung: ${a.beschreibung}\n`;
         if (a.schritte && a.schritte.length > 0) {
@@ -999,31 +1024,46 @@
             .sort((x, y) => Number(x.nr) - Number(y.nr))
             .forEach(s => {
               info += `${s.nr}. ${s.text}\n`;
+              if (s.assets && s.assets.length > 0) {
+                s.assets.forEach(asset => {
+                  const assetUrl = `${CONFIG.sharepoint.baseUrl}${a.assetPfad}${asset}`;
+                  info += `   → Bild: [${asset}](${assetUrl})\n`;
+                });
+              }
             });
         }
         return info;
       }).join('\n---\n');
       
-      const systemPrompt = `Du bist der SQB Hilfecenter-Assistent, ein freundlicher und kompetenter Experte für alle SQB-Produkte (MS-Portal, SmartRisk, SmartCompliance, etc.).
+      const systemPrompt = `Du bist der MS-Anwendungen Hilfecenter-Assistent, ein freundlicher und kompetenter Experte für alle MS-Anwendungen (MS-Portal, SmartRisk, SmartCompliance, etc.).
 
 DEINE AUFGABE:
 - Beantworte Fragen KONKRET und DIREKT mit den Informationen aus den Anleitungen
-- Gib die relevanten Schritte direkt in deiner Antwort wieder - der Benutzer soll die Lösung sofort sehen
-- Fasse die wichtigsten Schritte zusammen, anstatt nur auf Anleitungen zu verweisen
-- Wenn eine Anleitung mehrere Schritte hat, erkläre die relevanten Schritte direkt
-- Sei präzise aber freundlich
+- Gib die relevanten Schritte direkt in deiner Antwort wieder
+- Verlinke am Ende auf die passende Anleitung im Hilfecenter
+- Wenn Bilder/Screenshots zu einem Schritt gehören, füge den Link zum Bild ein
 
-FORMAT:
+FORMAT DEINER ANTWORTEN:
 - Antworte auf Deutsch
-- Strukturiere längere Antworten mit Nummerierungen
-- Bei komplexen Themen: Gib erst eine kurze Zusammenfassung, dann die Details
-- Erwähne am Ende kurz den Anleitungstitel für weitere Details
+- Verwende Markdown-Formatierung:
+  - **fett** für wichtige Begriffe
+  - Nummerierte Listen für Schritte
+  - [Linktext](URL) für Links
+- Strukturiere so:
+  1. Kurze Einleitung (1 Satz)
+  2. Die konkreten Schritte
+  3. Links zu Bildern wenn vorhanden (Format: 📷 [Bildname](URL))
+  4. Am Ende: 📖 Link zur vollständigen Anleitung
+
+VERLINKUNG:
+- Anleitungen verlinken mit: [Titel der Anleitung](#artikel-ID)
+- Bilder/Assets verlinken mit der SharePoint-URL die bei jedem Schritt angegeben ist
 
 VERFÜGBARE ANLEITUNGEN UND DEREN INHALTE:
 
 ${artikelDetails}
 
-WICHTIG: Gib dem Benutzer die konkreten Schritte und Informationen direkt - verweise nicht einfach auf eine Anleitung ohne den Inhalt zu erklären!`;
+WICHTIG: Gib dem Benutzer die konkreten Schritte und Informationen direkt - mit Links zu Bildern und zur Anleitung!`;
 
       try {
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -1199,12 +1239,41 @@ WICHTIG: Gib dem Benutzer die konkreten Schritte und Informationen direkt - verw
     }
 
     // ============================================
+    // MARKDOWN RENDERING
+    // ============================================
+    function renderMarkdown(text) {
+      // Links: [text](url)
+      text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+      
+      // Fett: **text**
+      text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+      
+      // Kursiv: *text*
+      text = text.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+      
+      // Code: `text`
+      text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
+      
+      // Zeilenumbrüche
+      text = text.replace(/\n/g, '<br>');
+      
+      return text;
+    }
+
+    // ============================================
     // CHAT FUNKTIONEN
     // ============================================
     function addChatMessage(role, content) {
       const messageEl = document.createElement('div');
       messageEl.className = `chat-message ${role}`;
-      messageEl.textContent = content;
+      
+      // Markdown nur für Assistent-Nachrichten rendern
+      if (role === 'assistant') {
+        messageEl.innerHTML = renderMarkdown(content);
+      } else {
+        messageEl.textContent = content;
+      }
+      
       chatMessagesEl.appendChild(messageEl);
       chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
     }
