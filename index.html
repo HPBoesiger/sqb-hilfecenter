@@ -665,6 +665,120 @@
     #list-view.hidden {
       display: none;
     }
+
+    /* Settings Modal */
+    .settings-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .settings-modal.open {
+      display: flex;
+    }
+
+    .settings-content {
+      background: white;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: var(--sqb-shadow-lg);
+      overflow: hidden;
+    }
+
+    .settings-header {
+      background: linear-gradient(135deg, var(--sqb-primary) 0%, var(--sqb-primary-light) 100%);
+      color: white;
+      padding: 1rem 1.25rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .settings-header h3 {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .settings-close {
+      background: rgba(255, 255, 255, 0.15);
+      border: none;
+      color: white;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .settings-close:hover {
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    .settings-body {
+      padding: 1.5rem;
+    }
+
+    .settings-body label {
+      display: block;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+      color: var(--sqb-text);
+    }
+
+    .settings-body input {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid var(--sqb-border);
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-family: monospace;
+      margin-bottom: 1rem;
+    }
+
+    .settings-body input:focus {
+      outline: none;
+      border-color: var(--sqb-accent);
+    }
+
+    .settings-hint {
+      font-size: 0.8rem;
+      color: var(--sqb-text-muted);
+      margin-bottom: 1rem;
+      line-height: 1.5;
+    }
+
+    .settings-hint a {
+      color: var(--sqb-primary);
+    }
+
+    .settings-save {
+      width: 100%;
+      padding: 0.75rem;
+      background: var(--sqb-accent);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .settings-save:hover {
+      background: var(--sqb-accent-light);
+    }
   </style>
 </head>
 <body>
@@ -731,15 +845,42 @@
       </svg>
     </button>
 
+    <!-- Einstellungen Modal -->
+    <div class="settings-modal" id="settings-modal">
+      <div class="settings-content">
+        <div class="settings-header">
+          <h3>⚙️ Chat Einstellungen</h3>
+          <button class="settings-close" id="settings-close">×</button>
+        </div>
+        <div class="settings-body">
+          <label for="openai-key">OpenAI API-Key:</label>
+          <input type="password" id="openai-key" placeholder="sk-proj-..." />
+          <p class="settings-hint">
+            Der API-Key wird nur lokal in Ihrem Browser gespeichert und nicht an Dritte übermittelt.
+            <br><br>
+            <a href="https://platform.openai.com/api-keys" target="_blank">→ API-Key bei OpenAI erstellen</a>
+          </p>
+          <button class="settings-save" id="settings-save">Speichern</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Chat Panel -->
     <div class="chat-panel" id="chat-panel">
       <div class="chat-header">
         <span class="chat-header-title">💬 SQB Assistent</span>
-        <button class="chat-close" id="chat-close">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
-          </svg>
-        </button>
+        <div style="display: flex; gap: 0.5rem;">
+          <button class="chat-close" id="chat-settings" title="Einstellungen">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+          </button>
+          <button class="chat-close" id="chat-close">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+            </svg>
+          </button>
+        </div>
       </div>
       <div class="chat-messages" id="chat-messages">
         <div class="chat-message assistant">
@@ -767,7 +908,8 @@
         projectId: "risikoanalyse-2025"
       },
       openai: {
-        apiKey: "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"
+        // API-Key wird aus localStorage geladen (sicher)
+        getApiKey: () => localStorage.getItem('sqb_openai_key') || ''
       },
       sharepoint: {
         baseUrl: "https://sqbag.sharepoint.com/sites/Demoportal/Hilfecenter/01_Produkte/"
@@ -840,6 +982,12 @@
     // OPENAI API
     // ============================================
     async function chatWithAssistant(messages) {
+      const apiKey = CONFIG.openai.getApiKey();
+      
+      if (!apiKey) {
+        return 'Bitte zuerst den OpenAI API-Key in den Einstellungen hinterlegen. Klicken Sie auf das Zahnrad-Symbol oben rechts im Chat.';
+      }
+      
       const systemPrompt = `Du bist der SQB Hilfecenter-Assistent. Du hilfst Benutzern bei Fragen zu den SQB-Produkten und -Tools.
 
 Verfügbare Hilfeartikel:
@@ -853,7 +1001,7 @@ Wenn du keine passende Antwort findest, sage dem Benutzer, dass er die Suchfunkt
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${CONFIG.openai.apiKey}`
+            'Authorization': `Bearer ${apiKey}`
           },
           body: JSON.stringify({
             model: 'gpt-4o-mini',
@@ -867,6 +1015,15 @@ Wenn du keine passende Antwort findest, sage dem Benutzer, dass er die Suchfunkt
         });
 
         const data = await response.json();
+        
+        if (data.error) {
+          console.error('OpenAI Fehler:', data.error);
+          if (data.error.code === 'invalid_api_key') {
+            return 'Der API-Key ist ungültig. Bitte überprüfen Sie den Key in den Einstellungen (Zahnrad-Symbol).';
+          }
+          return 'Entschuldigung, es ist ein Fehler aufgetreten: ' + data.error.message;
+        }
+        
         return data.choices?.[0]?.message?.content || 'Entschuldigung, ich konnte keine Antwort generieren.';
       } catch (error) {
         console.error('Chat-Fehler:', error);
@@ -1080,6 +1237,37 @@ Wenn du keine passende Antwort findest, sage dem Benutzer, dass er die Suchfunkt
     chatSend.addEventListener('click', sendChatMessage);
     chatInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') sendChatMessage();
+    });
+
+    // Settings Modal
+    const settingsModal = document.getElementById('settings-modal');
+    const settingsBtn = document.getElementById('chat-settings');
+    const settingsClose = document.getElementById('settings-close');
+    const settingsSave = document.getElementById('settings-save');
+    const openaiKeyInput = document.getElementById('openai-key');
+
+    settingsBtn.addEventListener('click', () => {
+      openaiKeyInput.value = CONFIG.openai.getApiKey();
+      settingsModal.classList.add('open');
+    });
+
+    settingsClose.addEventListener('click', () => {
+      settingsModal.classList.remove('open');
+    });
+
+    settingsModal.addEventListener('click', (e) => {
+      if (e.target === settingsModal) {
+        settingsModal.classList.remove('open');
+      }
+    });
+
+    settingsSave.addEventListener('click', () => {
+      const key = openaiKeyInput.value.trim();
+      if (key) {
+        localStorage.setItem('sqb_openai_key', key);
+        settingsModal.classList.remove('open');
+        addChatMessage('assistant', 'API-Key wurde gespeichert. Sie können jetzt Fragen stellen!');
+      }
     });
 
     // ============================================
