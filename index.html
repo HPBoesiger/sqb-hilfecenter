@@ -1050,6 +1050,7 @@
             id,
             titel: fields.titel?.stringValue || '',
             beschreibung: fields.beschreibung?.stringValue || '',
+            kurzbeschreibung: fields.kurzbeschreibung?.stringValue || '',
             produkte: fields.produkte?.arrayValue?.values?.map(v => v.stringValue) || [],
             typ: fields.typ?.stringValue || '',
             zielgruppe: fields.zielgruppe?.stringValue || '',
@@ -1098,7 +1099,12 @@
         info += `Produkte: ${a.produkte.join(', ') || 'Alle'}\n`;
         info += `Typ: ${a.typ || '-'}\n`;
         info += `Zielgruppe: ${a.zielgruppe || '-'}\n`;
-        info += `Beschreibung: ${a.beschreibung}\n`;
+        if (a.kurzbeschreibung) {
+          info += `Kurzbeschreibung: ${a.kurzbeschreibung}\n`;
+        }
+        if (a.beschreibung) {
+          info += `Beschreibung: ${a.beschreibung}\n`;
+        }
         if (a.dokumentPfad) {
           info += `Dokument: ${a.dokumentPfad}\n`;
         }
@@ -1233,6 +1239,7 @@ ${artikelDetails}`;
         const matchesSearch = searchQuery === '' || 
           article.titel.toLowerCase().includes(searchQuery) ||
           article.beschreibung.toLowerCase().includes(searchQuery) ||
+          article.kurzbeschreibung.toLowerCase().includes(searchQuery) ||
           article.stichworte.some(s => s.toLowerCase().includes(searchQuery));
         
         // Produkt-Filter (OR)
@@ -1274,7 +1281,7 @@ ${artikelDetails}`;
               </div>
               <div class="article-content">
                 <div class="article-title">${article.titel}</div>
-                <div class="article-description">${article.beschreibung || ''}</div>
+                <div class="article-description">${article.kurzbeschreibung || article.beschreibung || ''}</div>
               </div>
               <div class="article-tags">
                 ${article.produkte.map(p => `<span class="article-tag product">${p}</span>`).join('')}
@@ -1320,7 +1327,18 @@ ${artikelDetails}`;
 
     function showDetail(article) {
       document.getElementById('detail-title').textContent = article.titel;
-      document.getElementById('detail-description').textContent = article.beschreibung;
+      
+      // Kurzbeschreibung UND Beschreibung anzeigen
+      let descText = '';
+      if (article.kurzbeschreibung) {
+        descText = article.kurzbeschreibung;
+        if (article.beschreibung && article.beschreibung !== article.kurzbeschreibung) {
+          descText += '\n\n' + article.beschreibung;
+        }
+      } else {
+        descText = article.beschreibung || '';
+      }
+      document.getElementById('detail-description').innerText = descText;
       
       // Meta
       const metaParts = [];
