@@ -1077,10 +1077,27 @@
         return 'Bitte zuerst den OpenAI API-Key in den Einstellungen hinterlegen (Zahnrad-Symbol).';
       }
       
+      // Aktive Filter für Kontext
+      const aktiveFilterInfo = [];
+      if (activeFilters.produkte.length > 0) {
+        aktiveFilterInfo.push(`Produkte: ${activeFilters.produkte.join(', ')}`);
+      }
+      if (activeFilters.typ.length > 0) {
+        aktiveFilterInfo.push(`Typ: ${activeFilters.typ.join(', ')}`);
+      }
+      if (activeFilters.zielgruppe.length > 0) {
+        aktiveFilterInfo.push(`Zielgruppe: ${activeFilters.zielgruppe.join(', ')}`);
+      }
+      
+      const filterContext = aktiveFilterInfo.length > 0 
+        ? `\n\nDER BENUTZER HAT FOLGENDE FILTER AKTIV:\n${aktiveFilterInfo.join('\n')}\nPriorisiere Anleitungen die zu diesen Filtern passen!\n`
+        : '';
+      
       const artikelDetails = articles.map(a => {
         let info = `## ${a.titel}\n`;
-        info += `Produkte: ${a.produkte.join(', ')}\n`;
-        info += `Typ: ${a.typ}\n`;
+        info += `Produkte: ${a.produkte.join(', ') || 'Alle'}\n`;
+        info += `Typ: ${a.typ || '-'}\n`;
+        info += `Zielgruppe: ${a.zielgruppe || '-'}\n`;
         info += `Beschreibung: ${a.beschreibung}\n`;
         if (a.dokumentPfad) {
           info += `Dokument: ${a.dokumentPfad}\n`;
@@ -1100,7 +1117,7 @@ DEINE AUFGABE:
 - Beantworte Fragen KONKRET mit den Informationen aus den Anleitungen
 - Gib die relevanten Schritte direkt in deiner Antwort
 - Verweise am Ende auf die passende Anleitung
-
+${filterContext}
 FORMAT:
 - Antworte auf Deutsch, kurz und präzise
 - Verwende **fett** für wichtige Begriffe
