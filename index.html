@@ -4,7 +4,7 @@
 ║  MSP-ANWENDUNGEN HILFECENTER                                                 ║
 ║  SQB Systemberater AG                                                        ║
 ╠══════════════════════════════════════════════════════════════════════════════╣
-║  VERSION: 2.1 | DATUM: 2024-12                                               ║
+║  VERSION: 2.2 | DATUM: 2024-12                                               ║
 ╠══════════════════════════════════════════════════════════════════════════════╣
 ║  DATENSTRUKTUR (synchronisiert mit Import-Tool v6.5):                        ║
 ║  • kategorie (Anwendung, FAQ, Produktbeschreibung, Schulung, etc.)           ║
@@ -15,9 +15,8 @@
 ╠══════════════════════════════════════════════════════════════════════════════╣
 ║  FEATURES:                                                                   ║
 ║  • Kategorie-spezifische Icons und Farben                                    ║
-║  • Erweiterte Ergebnisboxen (Schritte, FAQ, Links)                           ║
-║  • FAQ-Anzeige mit Problem/Ursache/Lösung                                    ║
-║  • Weiterführende Links in Detail-Ansicht                                    ║
+║  • Kompakte Ergebnisboxen (Titel, Beschreibung, Tags)                        ║
+║  • Detailansicht: Schritte, FAQ (Problem/Ursache/Lösung), Links              ║
 ║  • GPT-4.1 Chat-Assistent                                                    ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 -->
@@ -222,17 +221,20 @@
       gap: 0.5rem;
     }
 
-    .article-card {
+    .article-row {
       background: var(--sqb-card);
       border-radius: 8px;
+      padding: 0.875rem 1rem;
       box-shadow: var(--sqb-shadow);
       cursor: pointer;
       transition: all 0.2s ease;
       border: 1px solid var(--sqb-border);
-      overflow: hidden;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
     }
 
-    .article-card:hover {
+    .article-row:hover {
       transform: translateX(4px);
       box-shadow: var(--sqb-shadow-lg);
       border-color: var(--sqb-accent);
@@ -344,79 +346,6 @@
     /* Erweiterte Artikel-Card Inhalte */
     .article-card {
       display: block;
-    }
-
-    .article-card-main {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      padding: 0.75rem 1rem;
-    }
-
-    .article-card-extra {
-      padding: 0 1rem 0.75rem 1rem;
-      border-top: 1px solid var(--sqb-border);
-      margin-top: 0;
-    }
-
-    .article-steps-preview {
-      font-size: 0.8rem;
-      color: var(--sqb-text-muted);
-      margin-bottom: 0.5rem;
-    }
-
-    .article-steps-preview .step-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 0.5rem;
-      margin-bottom: 0.25rem;
-    }
-
-    .article-steps-preview .step-nr {
-      background: var(--sqb-accent);
-      color: white;
-      width: 18px;
-      height: 18px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.65rem;
-      font-weight: bold;
-      flex-shrink: 0;
-    }
-
-    .article-faq-preview {
-      font-size: 0.8rem;
-      background: rgba(229, 62, 62, 0.05);
-      border-left: 3px solid #e53e3e;
-      padding: 0.5rem;
-      border-radius: 0 4px 4px 0;
-      margin-bottom: 0.5rem;
-    }
-
-    .article-faq-preview strong {
-      color: var(--sqb-text);
-    }
-
-    .article-links-preview {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      margin-top: 0.5rem;
-    }
-
-    .article-links-preview a {
-      font-size: 0.75rem;
-      color: var(--sqb-accent);
-      text-decoration: none;
-      display: flex;
-      align-items: center;
-      gap: 0.25rem;
-    }
-
-    .article-links-preview a:hover {
-      text-decoration: underline;
     }
 
     /* Article Detail View */
@@ -998,7 +927,7 @@
         padding: 1.25rem 0.875rem;
       }
 
-      .article-card-main {
+      .article-row {
         flex-wrap: wrap;
       }
 
@@ -1480,93 +1409,33 @@ ${artikelDetails}`;
 
       articlesContainer.innerHTML = `
         <div class="articles-list">
-          ${filtered.map(article => {
-            // Prüfen ob erweiterte Inhalte vorhanden sind
-            const hasSteps = article.schritte && article.schritte.length > 0;
-            const hasFaq = article.fehlerLoesungen && article.fehlerLoesungen.length > 0;
-            const hasLinks = article.weiterfuehrendLinks && article.weiterfuehrendLinks.length > 0;
-            const hasExtra = hasSteps || hasFaq || hasLinks;
-            
-            // Schritte-Preview (max 3)
-            let stepsHtml = '';
-            if (hasSteps) {
-              const sortedSteps = [...article.schritte].sort((a, b) => Number(a.nr) - Number(b.nr)).slice(0, 3);
-              stepsHtml = `
-                <div class="article-steps-preview">
-                  ${sortedSteps.map(s => `
-                    <div class="step-item">
-                      <span class="step-nr">${s.nr}</span>
-                      <span>${s.text}</span>
-                    </div>
-                  `).join('')}
-                  ${article.schritte.length > 3 ? `<div style="color:var(--sqb-text-muted);font-size:0.75rem;margin-left:26px">... und ${article.schritte.length - 3} weitere Schritte</div>` : ''}
-                </div>
-              `;
-            }
-            
-            // FAQ-Preview
-            let faqHtml = '';
-            if (hasFaq) {
-              const faq = article.fehlerLoesungen[0];
-              faqHtml = `
-                <div class="article-faq-preview">
-                  ${faq.fehler ? `<div><strong>Problem:</strong> ${faq.fehler}</div>` : ''}
-                  ${faq.loesung ? `<div><strong>Lösung:</strong> ${faq.loesung.substring(0, 150)}${faq.loesung.length > 150 ? '...' : ''}</div>` : ''}
-                </div>
-              `;
-            }
-            
-            // Links-Preview
-            let linksHtml = '';
-            if (hasLinks) {
-              linksHtml = `
-                <div class="article-links-preview">
-                  <span style="font-size:0.75rem;color:var(--sqb-text-muted)">🔗</span>
-                  ${article.weiterfuehrendLinks.slice(0, 3).map(l => 
-                    l.url ? `<a href="${l.url}" target="_blank" onclick="event.stopPropagation()">${l.titel || l.url}</a>` 
-                          : `<span style="font-size:0.75rem;color:var(--sqb-text-muted)">${l.titel}</span>`
-                  ).join('')}
-                  ${article.weiterfuehrendLinks.length > 3 ? `<span style="font-size:0.7rem;color:var(--sqb-text-muted)">+${article.weiterfuehrendLinks.length - 3}</span>` : ''}
-                </div>
-              `;
-            }
-            
-            return `
-            <div class="article-card" data-id="${article.id}">
-              <div class="article-card-main">
-                <div class="article-icon ${getKategorieClass(article.kategorie)}">
-                  ${getKategorieIcon(article.kategorie)}
-                </div>
-                <div class="article-content">
-                  <div class="article-title">${article.titel}</div>
-                  <div class="article-description">${article.kurzbeschreibung || article.beschreibung || ''}</div>
-                </div>
-                <div class="article-tags">
-                  ${article.produkte.map(p => `<span class="article-tag product">${p}</span>`).join('')}
-                  ${article.kategorie ? `<span class="article-tag kategorie">${article.kategorie}</span>` : ''}
-                </div>
-                <div class="article-arrow">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="m9 18 6-6-6-6"/>
-                  </svg>
-                </div>
+          ${filtered.map(article => `
+            <div class="article-row" data-id="${article.id}">
+              <div class="article-icon ${getKategorieClass(article.kategorie)}">
+                ${getKategorieIcon(article.kategorie)}
               </div>
-              ${hasExtra ? `
-                <div class="article-card-extra">
-                  ${stepsHtml}
-                  ${faqHtml}
-                  ${linksHtml}
-                </div>
-              ` : ''}
+              <div class="article-content">
+                <div class="article-title">${article.titel}</div>
+                <div class="article-description">${article.kurzbeschreibung || article.beschreibung || ''}</div>
+              </div>
+              <div class="article-tags">
+                ${article.produkte.map(p => `<span class="article-tag product">${p}</span>`).join('')}
+                ${article.kategorie ? `<span class="article-tag kategorie">${article.kategorie}</span>` : ''}
+              </div>
+              <div class="article-arrow">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="m9 18 6-6-6-6"/>
+                </svg>
+              </div>
             </div>
-          `}).join('')}
+          `).join('')}
         </div>
       `;
 
-      // Event Listener für Cards
-      articlesContainer.querySelectorAll('.article-card').forEach(card => {
-        card.addEventListener('click', () => {
-          const article = articles.find(a => a.id === card.dataset.id);
+      // Event Listener für Zeilen
+      articlesContainer.querySelectorAll('.article-row').forEach(row => {
+        row.addEventListener('click', () => {
+          const article = articles.find(a => a.id === row.dataset.id);
           if (article) showDetail(article);
         });
       });
