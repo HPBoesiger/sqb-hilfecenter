@@ -4,13 +4,13 @@
 ║  MSP-ANWENDUNGEN HILFECENTER                                                 ║
 ║  SQB Systemberater AG                                                        ║
 ╠══════════════════════════════════════════════════════════════════════════════╣
-║  VERSION: 2.0 | DATUM: 2024-12                                               ║
+║  VERSION: 2.1 | DATUM: 2024-12                                               ║
 ╠══════════════════════════════════════════════════════════════════════════════╣
 ║  DATENSTRUKTUR (synchronisiert mit Import-Tool v6.5):                        ║
-║  • kategorie (ersetzt: typ)                                                  ║
-║  • zielgruppen[] (ersetzt: zielgruppe)                                       ║
-║  • fehlerLoesungen[] (NEU - für FAQ)                                         ║
-║  • weiterfuehrendLinks[] (NEU)                                               ║
+║  • kategorie (Anwendung, FAQ, Produktbeschreibung, Schulung, etc.)           ║
+║  • zielgruppen[] (Anwender, Admin, QM-Verantwortliche)                       ║
+║  • fehlerLoesungen[] (für FAQ: Problem/Ursache/Lösung)                       ║
+║  • weiterfuehrendLinks[] (Titel + URL)                                       ║
 ║  • schritte[], stichworte[], produkte[]                                      ║
 ╠══════════════════════════════════════════════════════════════════════════════╣
 ║  FEATURES:                                                                   ║
@@ -1047,11 +1047,11 @@
             <div class="filter-buttons" id="filter-produkte"></div>
           </div>
           <div class="filter-group">
-            <span class="filter-label">Typ</span>
+            <span class="filter-label">Kategorie</span>
             <div class="filter-buttons" id="filter-kategorie"></div>
           </div>
           <div class="filter-group">
-            <span class="filter-label">Zielgruppe</span>
+            <span class="filter-label">Zielgruppen</span>
             <div class="filter-buttons" id="filter-zielgruppen"></div>
           </div>
         </div>
@@ -1232,9 +1232,8 @@
             beschreibung: fields.beschreibung?.stringValue || '',
             kurzbeschreibung: fields.kurzbeschreibung?.stringValue || '',
             produkte: fields.produkte?.arrayValue?.values?.map(v => v.stringValue) || [],
-            kategorie: fields.kategorie?.stringValue || fields.typ?.stringValue || '',
-            zielgruppen: fields.zielgruppen?.arrayValue?.values?.map(v => v.stringValue) || 
-                         (fields.zielgruppe?.stringValue ? [fields.zielgruppe.stringValue] : []),
+            kategorie: fields.kategorie?.stringValue || '',
+            zielgruppen: fields.zielgruppen?.arrayValue?.values?.map(v => v.stringValue) || [],
             schritte: fields.schritte?.arrayValue?.values?.map(s => ({
               nr: s.mapValue?.fields?.nr?.integerValue || s.mapValue?.fields?.nr?.stringValue || 0,
               text: s.mapValue?.fields?.text?.stringValue || ''
@@ -1399,18 +1398,18 @@ ${artikelDetails}`;
 
     function renderFilters() {
       const produkte = getUniqueValues('produkte');
-      const typen = getUniqueValues('typ');
-      const zielgruppen = getUniqueValues('zielgruppe');
+      const kategorien = getUniqueValues('kategorie');
+      const zielgruppen = getUniqueValues('zielgruppen');
 
       filterProdukte.innerHTML = produkte.map(p => `
         <button class="filter-btn ${activeFilters.produkte.includes(p) ? 'active' : ''}" data-filter="produkte" data-value="${p}">${p}</button>
       `).join('');
 
-      filterTyp.innerHTML = typen.map(t => `
-        <button class="filter-btn ${activeFilters.kategorie.includes(t) ? 'active-secondary' : ''}" data-filter="kategorie" data-value="${t}">${t}</button>
+      filterKategorie.innerHTML = kategorien.map(k => `
+        <button class="filter-btn ${activeFilters.kategorie.includes(k) ? 'active-secondary' : ''}" data-filter="kategorie" data-value="${k}">${k}</button>
       `).join('');
 
-      filterZielgruppe.innerHTML = zielgruppen.map(z => `
+      filterZielgruppen.innerHTML = zielgruppen.map(z => `
         <button class="filter-btn ${activeFilters.zielgruppen.includes(z) ? 'active-secondary' : ''}" data-filter="zielgruppen" data-value="${z}">${z}</button>
       `).join('');
 
