@@ -417,6 +417,33 @@
       line-height: 1.5;
     }
 
+    /* FAQ-Anzeige */
+    .faq-item {
+      background: var(--sqb-surface);
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border-left: 3px solid var(--sqb-accent);
+    }
+    
+    .faq-problem {
+      color: var(--sqb-text);
+      margin-bottom: 0.5rem;
+    }
+    
+    .faq-ursache {
+      color: var(--sqb-text-secondary);
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+    }
+    
+    .faq-loesung {
+      color: var(--sqb-text);
+      background: rgba(0, 200, 83, 0.1);
+      padding: 0.5rem;
+      border-radius: 4px;
+    }
+
     /* Chat Widget */
     .chat-toggle {
       position: fixed;
@@ -869,11 +896,11 @@
           </div>
           <div class="filter-group">
             <span class="filter-label">Typ</span>
-            <div class="filter-buttons" id="filter-typ"></div>
+            <div class="filter-buttons" id="filter-kategorie"></div>
           </div>
           <div class="filter-group">
             <span class="filter-label">Zielgruppe</span>
-            <div class="filter-buttons" id="filter-zielgruppe"></div>
+            <div class="filter-buttons" id="filter-zielgruppen"></div>
           </div>
         </div>
 
@@ -1005,8 +1032,8 @@
     let articles = [];
     let activeFilters = {
       produkte: [],
-      typ: [],
-      zielgruppe: []
+      kategorie: [],
+      zielgruppen: []
     };
     let chatMessages = [];
 
@@ -1015,8 +1042,8 @@
     // ============================================
     const searchInput = document.getElementById('search-input');
     const filterProdukte = document.getElementById('filter-produkte');
-    const filterTyp = document.getElementById('filter-typ');
-    const filterZielgruppe = document.getElementById('filter-zielgruppe');
+    const filterKategorie = document.getElementById('filter-kategorie');
+    const filterZielgruppen = document.getElementById('filter-zielgruppen');
     const articlesContainer = document.getElementById('articles-container');
     const resultCount = document.getElementById('result-count');
     const loadingEl = document.getElementById('loading');
@@ -1052,11 +1079,21 @@
             beschreibung: fields.beschreibung?.stringValue || '',
             kurzbeschreibung: fields.kurzbeschreibung?.stringValue || '',
             produkte: fields.produkte?.arrayValue?.values?.map(v => v.stringValue) || [],
-            typ: fields.typ?.stringValue || '',
-            zielgruppe: fields.zielgruppe?.stringValue || '',
+            kategorie: fields.kategorie?.stringValue || fields.typ?.stringValue || '',
+            zielgruppen: fields.zielgruppen?.arrayValue?.values?.map(v => v.stringValue) || 
+                         (fields.zielgruppe?.stringValue ? [fields.zielgruppe.stringValue] : []),
             schritte: fields.schritte?.arrayValue?.values?.map(s => ({
               nr: s.mapValue?.fields?.nr?.integerValue || s.mapValue?.fields?.nr?.stringValue || 0,
               text: s.mapValue?.fields?.text?.stringValue || ''
+            })) || [],
+            fehlerLoesungen: fields.fehlerLoesungen?.arrayValue?.values?.map(f => ({
+              fehler: f.mapValue?.fields?.fehler?.stringValue || '',
+              ursache: f.mapValue?.fields?.ursache?.stringValue || '',
+              loesung: f.mapValue?.fields?.loesung?.stringValue || ''
+            })) || [],
+            weiterfuehrendLinks: fields.weiterfuehrendLinks?.arrayValue?.values?.map(l => ({
+              titel: l.mapValue?.fields?.titel?.stringValue || '',
+              url: l.mapValue?.fields?.url?.stringValue || ''
             })) || [],
             stichworte: fields.stichworte?.arrayValue?.values?.map(v => v.stringValue) || [],
             dokumentPfad: fields.dokumentPfad?.stringValue || ''
@@ -1083,11 +1120,11 @@
       if (activeFilters.produkte.length > 0) {
         aktiveFilterInfo.push(`Produkte: ${activeFilters.produkte.join(', ')}`);
       }
-      if (activeFilters.typ.length > 0) {
-        aktiveFilterInfo.push(`Typ: ${activeFilters.typ.join(', ')}`);
+      if (activeFilters.kategorie.length > 0) {
+        aktiveFilterInfo.push(`Kategorie: ${activeFilters.kategorie.join(', ')}`);
       }
-      if (activeFilters.zielgruppe.length > 0) {
-        aktiveFilterInfo.push(`Zielgruppe: ${activeFilters.zielgruppe.join(', ')}`);
+      if (activeFilters.zielgruppen.length > 0) {
+        aktiveFilterInfo.push(`Zielgruppen: ${activeFilters.zielgruppen.join(', ')}`);
       }
       
       const filterContext = aktiveFilterInfo.length > 0 
@@ -1097,8 +1134,8 @@
       const artikelDetails = articles.map(a => {
         let info = `## ${a.titel}\n`;
         info += `Produkte: ${a.produkte.join(', ') || 'Alle'}\n`;
-        info += `Typ: ${a.typ || '-'}\n`;
-        info += `Zielgruppe: ${a.zielgruppe || '-'}\n`;
+        info += `Kategorie: ${a.kategorie || '-'}\n`;
+        info += `Zielgruppen: ${a.zielgruppen.join(', ') || '-'}\n`;
         if (a.kurzbeschreibung) {
           info += `Kurzbeschreibung: ${a.kurzbeschreibung}\n`;
         }
@@ -1112,6 +1149,14 @@
           info += `Schritte:\n`;
           a.schritte.sort((x, y) => Number(x.nr) - Number(y.nr)).forEach(s => {
             info += `${s.nr}. ${s.text}\n`;
+          });
+        }
+        if (a.fehlerLoesungen && a.fehlerLoesungen.length > 0) {
+          info += `Problem & Lösung:\n`;
+          a.fehlerLoesungen.forEach(f => {
+            if (f.fehler) info += `Problem: ${f.fehler}\n`;
+            if (f.ursache) info += `Ursache: ${f.ursache}\n`;
+            if (f.loesung) info += `Lösung: ${f.loesung}\n`;
           });
         }
         return info;
@@ -1209,11 +1254,11 @@ ${artikelDetails}`;
       `).join('');
 
       filterTyp.innerHTML = typen.map(t => `
-        <button class="filter-btn ${activeFilters.typ.includes(t) ? 'active-secondary' : ''}" data-filter="typ" data-value="${t}">${t}</button>
+        <button class="filter-btn ${activeFilters.kategorie.includes(t) ? 'active-secondary' : ''}" data-filter="kategorie" data-value="${t}">${t}</button>
       `).join('');
 
       filterZielgruppe.innerHTML = zielgruppen.map(z => `
-        <button class="filter-btn ${activeFilters.zielgruppe.includes(z) ? 'active-secondary' : ''}" data-filter="zielgruppe" data-value="${z}">${z}</button>
+        <button class="filter-btn ${activeFilters.zielgruppen.includes(z) ? 'active-secondary' : ''}" data-filter="zielgruppen" data-value="${z}">${z}</button>
       `).join('');
 
       // Event Listeners
@@ -1239,26 +1284,31 @@ ${artikelDetails}`;
       const searchQuery = searchInput.value.toLowerCase();
       
       const filtered = articles.filter(article => {
-        // Suchfilter
+        // Suchfilter (inkl. FAQ-Inhalte)
         const matchesSearch = searchQuery === '' || 
           article.titel.toLowerCase().includes(searchQuery) ||
           article.beschreibung.toLowerCase().includes(searchQuery) ||
           article.kurzbeschreibung.toLowerCase().includes(searchQuery) ||
-          article.stichworte.some(s => s.toLowerCase().includes(searchQuery));
+          article.stichworte.some(s => s.toLowerCase().includes(searchQuery)) ||
+          (article.fehlerLoesungen && article.fehlerLoesungen.some(f => 
+            (f.fehler && f.fehler.toLowerCase().includes(searchQuery)) ||
+            (f.ursache && f.ursache.toLowerCase().includes(searchQuery)) ||
+            (f.loesung && f.loesung.toLowerCase().includes(searchQuery))
+          ));
         
         // Produkt-Filter (OR)
         const matchesProdukt = activeFilters.produkte.length === 0 || 
           article.produkte.some(p => activeFilters.produkte.includes(p));
         
-        // Typ-Filter (OR)
-        const matchesTyp = activeFilters.typ.length === 0 || 
-          activeFilters.typ.includes(article.typ);
+        // Kategorie-Filter (OR)
+        const matchesKategorie = activeFilters.kategorie.length === 0 || 
+          activeFilters.kategorie.includes(article.kategorie);
         
-        // Zielgruppe-Filter (OR)
-        const matchesZielgruppe = activeFilters.zielgruppe.length === 0 || 
-          activeFilters.zielgruppe.includes(article.zielgruppe);
+        // Zielgruppen-Filter (OR)
+        const matchesZielgruppe = activeFilters.zielgruppen.length === 0 || 
+          activeFilters.zielgruppen.some(z => article.zielgruppen.includes(z));
         
-        return matchesSearch && matchesProdukt && matchesTyp && matchesZielgruppe;
+        return matchesSearch && matchesProdukt && matchesKategorie && matchesZielgruppe;
       });
 
       // Ergebnis-Zähler
@@ -1280,8 +1330,8 @@ ${artikelDetails}`;
         <div class="articles-list">
           ${filtered.map(article => `
             <div class="article-row" data-id="${article.id}">
-              <div class="article-icon ${getTypClass(article.typ)}">
-                ${getTypIcon(article.typ)}
+              <div class="article-icon ${getKategorieClass(article.kategorie)}">
+                ${getKategorieIcon(article.kategorie)}
               </div>
               <div class="article-content">
                 <div class="article-title">${article.titel}</div>
@@ -1289,7 +1339,7 @@ ${artikelDetails}`;
               </div>
               <div class="article-tags">
                 ${article.produkte.map(p => `<span class="article-tag product">${p}</span>`).join('')}
-                ${article.typ ? `<span class="article-tag typ">${article.typ}</span>` : ''}
+                ${article.kategorie ? `<span class="article-tag typ">${article.kategorie}</span>` : ''}
               </div>
               <div class="article-arrow">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1310,7 +1360,7 @@ ${artikelDetails}`;
       });
     }
 
-    function getTypClass(typ) {
+    function getKategorieClass(typ) {
       const classes = {
         'FAQ': 'typ-faq',
         'Produktübersicht': 'typ-produktuebersicht',
@@ -1319,7 +1369,7 @@ ${artikelDetails}`;
       return classes[typ] || '';
     }
 
-    function getTypIcon(typ) {
+    function getKategorieIcon(typ) {
       const icons = {
         'Anleitung': '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>',
         'FAQ': '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
@@ -1347,8 +1397,8 @@ ${artikelDetails}`;
       // Meta
       const metaParts = [];
       if (article.produkte.length) metaParts.push(article.produkte.join(', '));
-      if (article.typ) metaParts.push(article.typ);
-      if (article.zielgruppe) metaParts.push(article.zielgruppe);
+      if (article.kategorie) metaParts.push(article.kategorie);
+      if (article.zielgruppen && article.zielgruppen.length) metaParts.push(article.zielgruppen.join(', '));
       document.getElementById('detail-meta').innerHTML = metaParts.map(p => `<span>${p}</span>`).join(' • ');
 
       // Dokument-Button
@@ -1371,6 +1421,18 @@ ${artikelDetails}`;
             <div class="step">
               <div class="step-number">${schritt.nr || idx + 1}</div>
               <div class="step-text">${schritt.text}</div>
+            </div>
+          `).join('')}
+        `;
+      } else if (article.fehlerLoesungen && article.fehlerLoesungen.length > 0) {
+        // FAQ-Dokumente: Problem & Lösung anzeigen
+        stepsContainer.innerHTML = `
+          <h3 class="steps-title">Problem & Lösung</h3>
+          ${article.fehlerLoesungen.map(f => `
+            <div class="faq-item">
+              ${f.fehler ? `<div class="faq-problem"><strong>Problem:</strong> ${f.fehler}</div>` : ''}
+              ${f.ursache ? `<div class="faq-ursache"><strong>Ursache:</strong> ${f.ursache}</div>` : ''}
+              ${f.loesung ? `<div class="faq-loesung"><strong>Lösung:</strong> ${f.loesung}</div>` : ''}
             </div>
           `).join('')}
         `;
