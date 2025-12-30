@@ -1178,16 +1178,29 @@
 
     // KATEGORIEN mit Icons
     const KATEGORIE_CONFIG = {
+      'Überblick': { icon: '👁️', class: 'kategorie-ueberblick' },
       'Erste Schritte': { icon: '🚀', class: 'kategorie-erste-schritte' },
       'Anleitungen': { icon: '📋', class: 'kategorie-anleitungen' },
       'Problemlösung': { icon: '🔧', class: 'kategorie-problemloesung' },
-      'Überblick': { icon: '👁️', class: 'kategorie-ueberblick' },
       'Einstellungen': { icon: '⚙️', class: 'kategorie-einstellungen' },
       'Wissen vertiefen': { icon: '📚', class: 'kategorie-wissen-vertiefen' },
       'Praxisbeispiele': { icon: '💡', class: 'kategorie-praxisbeispiele' },
       'Flows': { icon: '🔄', class: 'kategorie-flows' },
       'Videos': { icon: '🎬', class: 'kategorie-videos' }
     };
+
+    // Gewünschte Reihenfolge der Kategorien
+    const KATEGORIEN_ORDER = [
+      'Überblick',
+      'Erste Schritte', 
+      'Anleitungen',
+      'Problemlösung',
+      'Einstellungen',
+      'Wissen vertiefen',
+      'Praxisbeispiele',
+      'Flows',
+      'Videos'
+    ];
 
     // ============================================
     // GLOBALE VARIABLEN
@@ -1418,7 +1431,10 @@ ${artikelDetails}`;
 
     function renderFilters() {
       const produkte = getUniqueValues('produkte');
-      const kategorien = getUniqueValues('kategorien');  // Jetzt aus kategorien Array
+      const vorhandeneKategorien = getUniqueValues('kategorien');
+      
+      // Kategorien in definierter Reihenfolge, nur die vorhandenen anzeigen
+      const kategorien = KATEGORIEN_ORDER.filter(k => vorhandeneKategorien.includes(k));
 
       filterProdukte.innerHTML = produkte.map(p => `
         <button class="filter-btn ${activeFilters.produkte.includes(p) ? 'active' : ''}" data-filter="produkte" data-value="${p}">${p}</button>
