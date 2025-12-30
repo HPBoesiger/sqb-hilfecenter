@@ -4,13 +4,21 @@
 ║  MSP-ANWENDUNGEN HILFECENTER                                                 ║
 ║  SQB Systemberater AG                                                        ║
 ╠══════════════════════════════════════════════════════════════════════════════╣
-║  VERSION: 2.4 | DATUM: 2024-12                                               ║
+║  VERSION: 2.5 | DATUM: 2024-12                                               ║
 ╠══════════════════════════════════════════════════════════════════════════════╣
-║  DATENSTRUKTUR (synchronisiert mit Import-Tool v6.8):                        ║
+║  ÄNDERUNGEN v2.5:                                                            ║
+║  • NEU: Sortierung nach Beliebteste/Neueste/Geändert                         ║
+║  • NEU: viewCount wird bei jedem Artikel-Klick erhöht                        ║
+║  • Unterstützt createdAt, updatedAt, viewCount Felder                        ║
+║  • Fallback für Artikel ohne diese Felder                                    ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║  DATENSTRUKTUR (synchronisiert mit Import-Tool v6.11):                       ║
 ║  • kategorien[] (ARRAY - Mehrfachauswahl!)                                   ║
 ║  • fehlerLoesungen[] (für FAQ: Problem/Ursache/Lösung)                       ║
 ║  • weiterfuehrendLinks[] (Titel + URL)                                       ║
 ║  • schritte[], stichworte[], produkte[]                                      ║
+║  • createdAt, updatedAt (ISO Timestamp)                                      ║
+║  • viewCount (Integer)                                                       ║
 ╠══════════════════════════════════════════════════════════════════════════════╣
 ║  KATEGORIEN (Mehrfachauswahl):                                               ║
 ║  🚀 Erste Schritte    → Einstieg & Grundlagen                                ║
@@ -22,11 +30,6 @@
 ║  💡 Praxisbeispiele   → Best Practices & Demos                               ║
 ║  🔄 Flows             → Prozessabläufe                                       ║
 ║  🎬 Videos            → Video-Tutorials                                      ║
-╠══════════════════════════════════════════════════════════════════════════════╣
-║  ÄNDERUNGEN v2.4:                                                            ║
-║  • kategorien als Array unterstützt (Mehrfachauswahl)                        ║
-║  • Rückwärtskompatibel mit altem kategorie-String                            ║
-║  • Filter-Logik angepasst für Array-Kategorien                               ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 -->
 <html lang="de">
@@ -245,6 +248,44 @@
 
     .filter-btn-icon {
       font-size: 0.9rem;
+    }
+
+    /* Sort Buttons */
+    .sort-group {
+      margin-bottom: 0.75rem;
+      padding-top: 0.5rem;
+      border-top: 1px solid var(--sqb-border);
+    }
+
+    .sort-btn {
+      padding: 0.375rem 0.75rem;
+      border-radius: 6px;
+      border: 1px solid var(--sqb-border);
+      background: var(--sqb-card);
+      color: var(--sqb-text-muted);
+      font-size: 0.8rem;
+      font-family: inherit;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+    }
+
+    .sort-btn:hover {
+      border-color: var(--sqb-primary);
+      color: var(--sqb-primary);
+    }
+
+    .sort-btn.active {
+      background: linear-gradient(135deg, var(--sqb-accent) 0%, var(--sqb-accent-light) 100%);
+      border-color: var(--sqb-accent);
+      color: white;
+    }
+
+    .sort-btn-icon {
+      font-size: 0.85rem;
     }
 
     /* Articles List - Compact View */
@@ -975,6 +1016,20 @@
             <span class="filter-label">Thema</span>
             <div class="filter-buttons" id="filter-kategorie"></div>
           </div>
+          <div class="filter-group sort-group">
+            <span class="filter-label">Sortierung</span>
+            <div class="filter-buttons" id="sort-buttons">
+              <button class="sort-btn" data-sort="beliebt">
+                <span class="sort-btn-icon">🔥</span> Beliebteste
+              </button>
+              <button class="sort-btn" data-sort="neu">
+                <span class="sort-btn-icon">🆕</span> Neueste
+              </button>
+              <button class="sort-btn" data-sort="geaendert">
+                <span class="sort-btn-icon">✏️</span> Geändert
+              </button>
+            </div>
+          </div>
         </div>
 
         <!-- Ergebnisse -->
@@ -1112,6 +1167,7 @@
       produkte: [],
       kategorien: []  // Umbenannt von kategorie zu kategorien
     };
+    let activeSort = null;  // 'beliebt', 'neu', 'geaendert' oder null
     let chatMessages = [];
 
     // ============================================
@@ -1181,7 +1237,11 @@
               url: l.mapValue?.fields?.url?.stringValue || ''
             })) || [],
             stichworte: fields.stichworte?.arrayValue?.values?.map(v => v.stringValue) || [],
-            dokumentPfad: fields.dokumentPfad?.stringValue || ''
+            dokumentPfad: fields.dokumentPfad?.stringValue || '',
+            // NEU v2.5: Zeitstempel und Aufrufzähler (mit Fallback)
+            createdAt: fields.createdAt?.stringValue || null,
+            updatedAt: fields.updatedAt?.stringValue || null,
+            viewCount: parseInt(fields.viewCount?.integerValue || '0', 10)
           };
         }).filter(a => a.titel && a.titel.trim() !== '');
       } catch (error) {
@@ -1360,12 +1420,63 @@ ${artikelDetails}`;
           renderArticles();
         });
       });
+      
+      // Sort Buttons Event Listeners
+      initSortButtons();
+    }
+
+    function initSortButtons() {
+      document.querySelectorAll('.sort-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const sortType = btn.dataset.sort;
+          
+          // Toggle: Wenn bereits aktiv, deaktivieren
+          if (activeSort === sortType) {
+            activeSort = null;
+          } else {
+            activeSort = sortType;
+          }
+          
+          // Button-Styles aktualisieren
+          document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+          if (activeSort) {
+            btn.classList.add('active');
+          }
+          
+          renderArticles();
+        });
+      });
+    }
+
+    function sortArticles(articleList) {
+      if (!activeSort) return articleList;
+      
+      return [...articleList].sort((a, b) => {
+        switch (activeSort) {
+          case 'beliebt':
+            return (b.viewCount || 0) - (a.viewCount || 0);
+          case 'neu':
+            // Neueste zuerst, Artikel ohne Datum ganz unten
+            if (!a.createdAt && !b.createdAt) return 0;
+            if (!a.createdAt) return 1;
+            if (!b.createdAt) return -1;
+            return new Date(b.createdAt) - new Date(a.createdAt);
+          case 'geaendert':
+            // Zuletzt geändert zuerst
+            if (!a.updatedAt && !b.updatedAt) return 0;
+            if (!a.updatedAt) return 1;
+            if (!b.updatedAt) return -1;
+            return new Date(b.updatedAt) - new Date(a.updatedAt);
+          default:
+            return 0;
+        }
+      });
     }
 
     function renderArticles() {
       const searchQuery = searchInput.value.toLowerCase();
       
-      const filtered = articles.filter(article => {
+      let filtered = articles.filter(article => {
         // Suchfilter (inkl. FAQ-Inhalte und Kategorien)
         const matchesSearch = searchQuery === '' || 
           article.titel.toLowerCase().includes(searchQuery) ||
@@ -1389,6 +1500,9 @@ ${artikelDetails}`;
         
         return matchesSearch && matchesProdukt && matchesKategorie;
       });
+
+      // Sortierung anwenden
+      filtered = sortArticles(filtered);
 
       // Ergebnis-Zähler
       resultCount.textContent = `${filtered.length} Ergebnis${filtered.length !== 1 ? 'se' : ''}`;
@@ -1434,9 +1548,38 @@ ${artikelDetails}`;
       articlesContainer.querySelectorAll('.article-row').forEach(row => {
         row.addEventListener('click', () => {
           const article = articles.find(a => a.id === row.dataset.id);
-          if (article) showDetail(article);
+          if (article) {
+            // viewCount erhöhen
+            incrementViewCount(article.id);
+            showDetail(article);
+          }
         });
       });
+    }
+
+    // NEU v2.5: ViewCount in Firebase erhöhen
+    async function incrementViewCount(articleId) {
+      try {
+        // Aktuellen Artikel in lokalem Array aktualisieren
+        const article = articles.find(a => a.id === articleId);
+        if (article) {
+          article.viewCount = (article.viewCount || 0) + 1;
+        }
+        
+        // In Firebase aktualisieren via REST API
+        const docUrl = `${firestoreUrl}/hilfecenter/${articleId}?key=${CONFIG.firebase.apiKey}&updateMask.fieldPaths=viewCount`;
+        await fetch(docUrl, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fields: {
+              viewCount: { integerValue: article.viewCount.toString() }
+            }
+          })
+        });
+      } catch (error) {
+        console.warn('ViewCount konnte nicht aktualisiert werden:', error);
+      }
     }
 
     // Nimmt jetzt Array entgegen, gibt Klasse der ersten Kategorie zurück
